@@ -47,14 +47,104 @@ logger.addHandler(handler)
 logger.propagate = False
 
 
+class MockStockMarket():
+
+    trade_log = None
+    differential = None
+    trade_result = None
+
+    def set_mock_parameter(self, trade_log=None, differential=None, trade_result=None):
+        # モックとして返す値を設定する
+        # Noneが指定されていた場合は乱数を返すようにする
+        logger.debug('MockStockMarket.set_mock_parameter()')
+        self.trade_log = trade_log
+        self.differential = differential
+        self.trade_result = trade_result
+        logger.info(f'set trade_log: {trade_log}')
+        logger.info(f'set differential: {differential}')
+        logger.info(f'set trade_result: {trade_result}')
+
+    def check_latest_trade(self):
+        # 最後の取引履歴を確認する
+        # 1: 最後に売却もしくはまだ取引を行っていないので、購入する
+        # -1: 最後に購入したので、売却する
+        # 0: なんらかの理由で確認できなかった
+
+        # モックの値が指定されていればその値を返却する
+        # 指定されていなければ乱数を返す
+        logger.debug('MockStockMarket.check_latest_trade()')
+        logger.info(f'mock trade log: {self.trade_log}')
+        if self.trade_log:
+            logger.info(f'response trade log: {self.trade_log}')
+            return self.trade_log
+        else:
+            t = random.randint(-1,1)
+            logger.info(f'using random value: {t}')
+            return t
+
+    def check_differential(self):
+        # 現在の市場の動向を確認する
+
+        # モックの値が指定されていればその値を返却する
+        # 指定されていなければ乱数を返す
+        logger.debug('MockStockMarket.check_differential()')
+        logger.info(f'mock differential: {self.differential}')
+        if self.differential:
+            logger.info(f'response differential: {self.differential}')
+            return self.differential
+        else:
+            t = random.uniform(-1,1)
+            logger.info(f'using random value: {t}')
+            return t
+
+    def buy(self):
+        # 購入取引を実施する
+        # 1: 取引成功
+        # -1: 取引失敗
+        # 0: 取引を行わなかった
+
+        # モックの値が指定されていればその値を返却する
+        # 指定されていなければ乱数を返す
+        logger.debug('MockStockMarket.buy()')
+        logger.info(f'mock trade result: {self.trade_result}')
+        if self.trade_result:
+            logger.info(f'response trade result: {self.trade_result}')
+            return self.trade_result
+        else:
+            t = random.randint(-1,1)
+            logger.info(f'using random value: {t}')
+            return t
+
+    def sell(self):
+        # 売却取引を実施する
+        # 1: 取引成功
+        # -1: 取引失敗
+        # 0: 取引を行わなかった
+
+        # モックの値が指定されていればその値を返却する
+        # 指定されていなければ乱数を返す
+        logger.debug('MockStockMarket.sell()')
+        logger.info(f'mock trade result: {self.trade_result}')
+        if self.trade_result:
+            logger.info(f'response trade result: {self.trade_result}')
+            return self.trade_result
+        else:
+            t = random.randint(-1,1)
+            logger.info(f'using random value: {t}')
+            return t
+
+
 class Trader():
 
+    market = None  # 取引を行う市場の情報
     threshold_differential = 0.1  # 売買を行うかどうかの判断基準。直近取引の傾きがこの値を超えていれば売買を行う
 
-    def __init__(self, threshold_differential=0.1):
+    def __init__(self, market, threshold_differential=0.1):
         # クラスの初期パラメータを設定する
         logger.debug('Trader.__init__()')
+        self.market = market
         self.threshold_differential = threshold_differential
+        logger.info(f'set market: {type(self.market).__name__}')
         logger.info(f'set threshold differential: {self.threshold_differential}')
 
     def initialize(self):
@@ -154,12 +244,12 @@ class Trader():
         # -1: 最後に購入したので、売却する
         # 0: なんらかの理由で確認できなかった
         logger.debug('Trader.check_latest_trade()')
-        return random.randint(-1,1)  # TODO: 
+        return self.market.check_latest_trade()
 
     def check_differential(self):
         # 現在の市場の動向を確認する
         logger.debug('Trader.check_differential()')
-        return random.uniform(-1,1)  # TODO:
+        return self.market.check_differential()
 
     def buy(self):
         # 購入取引を実施する
@@ -167,7 +257,7 @@ class Trader():
         # -1: 取引失敗
         # 0: 取引を行わなかった
         logger.debug('Trader.buy()')
-        return random.randint(-1,1)  # TODO: 
+        return self.market.buy()
 
     def sell(self):
         # 売却取引を実施する
@@ -175,7 +265,7 @@ class Trader():
         # -1: 取引失敗
         # 0: 取引を行わなかった
         logger.debug('Trader.sell()')
-        return random.randint(-1,1)  # TODO: 
+        return self.market.sell()
 
 
 def main():
@@ -183,8 +273,10 @@ def main():
     update_transaction_id(handler, uuid.uuid4().hex)
 
     # 取引を行うプログラムの準備を行う
+    logger.info('create Market instance')
+    market = MockStockMarket()
     logger.info('create Trader instance')
-    trader = Trader()
+    trader = Trader(market, 0.1)
     trader.initialize()
 
     # Event loop
