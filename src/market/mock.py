@@ -1,11 +1,12 @@
 import random
 from . import get_module_logger
+from .base_market import BaseMarket
 
 
 logger = get_module_logger()
 
 
-class MockStockMarket():
+class MockStockMarket(BaseMarket):
 
     is_dryrun = False
     trade_log = None
