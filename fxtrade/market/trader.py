@@ -60,7 +60,7 @@ class Trader():
         else:
             # 取引しない判断をしたので何もしない
             logger.info('no deal')
-            is_success = None
+            is_success = 0
 
         # 取引の実行結果成功したかどうかを返却する
         # 1: 成功した

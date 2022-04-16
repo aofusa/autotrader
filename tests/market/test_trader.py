@@ -15,6 +15,7 @@ class TestTrader(unittest.TestCase):
 
     def test_decision_deal(self):
         # 売買を行うべきかどうかの判断が正しいかどうかテスト
+        logger.debug('start test_decision_deal')
 
         # 符号の確認と絶対値で比較を行う
         # trade_log: 1で購入、-1で売却
@@ -50,8 +51,7 @@ class TestTrader(unittest.TestCase):
             logger.debug(f'parameter[{idx}]: {parameter}, expected: {parameter[3]}, actual: {is_deal}')
             self.assertEqual(is_deal, parameter[3])
 
-    def test_trade(self):
-        self.assertEqual('foo'.upper(), 'FOO')
+        logger.debug('end test_decision_deal')
 
 
 if __name__ == '__main__':
