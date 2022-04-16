@@ -180,7 +180,7 @@ class Trader():
 
 def main():
     logger.info('start trade program')
-    update_transaction_id(handler)
+    update_transaction_id(handler, uuid.uuid4().hex)
 
     # 取引を行うプログラムの準備を行う
     logger.info('create Trader instance')
@@ -191,7 +191,7 @@ def main():
     logger.info('start event loop')
     while True:
         # 取引ごとにログを終えるようにトランザクションIDを更新する
-        update_transaction_id(handler)
+        update_transaction_id(handler, uuid.uuid4().hex)
         logger.info('update transaction id')
 
         # 取引を行う
