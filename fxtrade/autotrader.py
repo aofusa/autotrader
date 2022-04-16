@@ -1,4 +1,3 @@
-import uuid
 import time
 import argparse
 import logging
@@ -32,7 +31,7 @@ def main(use_bitflyer, threshold, wait_time, dryrun):
     logger.info('start event loop')
     while True:
         # 取引ごとにログを終えるようにトランザクションIDを更新する
-        update_transaction_id(uuid.uuid4().hex)
+        update_transaction_id()
         logger.info('update transaction id')
 
         # 取引を行う

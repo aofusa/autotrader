@@ -34,7 +34,12 @@ def anonymization(x):
         return data[0] + data[1] + '*'*(len(data)-3) + data[-1]
 
 
-def update_transaction_id(new_transaction_id=uuid.uuid4().hex):
+def update_transaction_id():
+    transaction_id = uuid.uuid4().hex
+    set_transaction_id(transaction_id)
+
+
+def set_transaction_id(new_transaction_id):
     transaction_id = new_transaction_id
     formatter = JsonFormatter('{"timestamp": "%(asctime)-15s", "transaction-id": ' + f'"{transaction_id}"' + ', "level": "%(levelname)s", "message": %(message)s}')
     handler.setFormatter(formatter)

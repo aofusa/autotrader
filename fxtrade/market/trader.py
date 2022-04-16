@@ -82,7 +82,7 @@ class Trader():
         # trade_log: 1で購入、-1で売却
         # differential: 0以上で購入、0未満で売却
         # differentialの絶対値がthreshold未満なら購入も売却もしない
-        # trade_logとdifferentialの値が一致していなければ購入も売却もしない
+        # trade_logとdifferentialの符号が一致していなければ購入も売却もしない
 
         # 購入なら1、売却なら-1、何もしないなら0を返す
         logger.info(f'threshold: {threshold}')
