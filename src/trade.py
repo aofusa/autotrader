@@ -5,8 +5,7 @@ import logging
 
 
 from market import get_module_logger, update_transaction_id
-from market.trader import Trader
-from market.mock import MockStockMarket
+from market import Trader, MockStockMarket
 
 
 logger = get_module_logger()
