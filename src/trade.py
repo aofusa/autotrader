@@ -1,6 +1,7 @@
 import uuid
 import time
 import argparse
+import logging
 
 
 from market import get_module_logger, update_transaction_id
@@ -8,12 +9,11 @@ from market.trader import Trader
 from market.mock import MockStockMarket
 
 
-logger = get_module_logger(__name__)
+logger = get_module_logger()
 
 
 def main(use_bitflyer, threshold, wait_time, dryrun):
     logger.info('start trade program')
-    update_transaction_id(uuid.uuid4().hex)
 
     # 取引を行うプログラムの準備を行う
     logger.info('create Market instance')
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not args.verbosity:
-        logger.setLevel(INFO)
+        logger.setLevel(logging.INFO)
 
     if args.dryrun:
         logger.info('dryrun mode')

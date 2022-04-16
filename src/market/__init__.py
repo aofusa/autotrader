@@ -1,9 +1,11 @@
 import json
 import uuid
-from logging import getLogger, StreamHandler, DEBUG, INFO, Formatter
+from logging import getLogger, StreamHandler, DEBUG, Formatter
 
 
+transaction_id = uuid.uuid4().hex
 handler = StreamHandler()
+logger = getLogger(__name__)
 
 
 class JsonFormatter(Formatter):
@@ -32,14 +34,18 @@ def anonymization(x):
         return data[0] + data[1] + '*'*(len(data)-3) + data[-1]
 
 
-def update_transaction_id(transaction_id=uuid.uuid4().hex):
+def update_transaction_id(new_transaction_id=uuid.uuid4().hex):
+    transaction_id = new_transaction_id
     formatter = JsonFormatter('{"timestamp": "%(asctime)-15s", "transaction-id": ' + f'"{transaction_id}"' + ', "level": "%(levelname)s", "message": %(message)s}')
     handler.setFormatter(formatter)
 
 
-def get_module_logger(modname):
-    formatter = JsonFormatter('{"timestamp": "%(asctime)-15s", "transaction-id": ' + f'"{uuid.uuid4().hex}"' + ', "level": "%(levelname)s", "message": %(message)s}')
-    logger = getLogger(modname)
+def get_transaction_id():
+    return transaction_id
+
+
+def get_module_logger():
+    formatter = JsonFormatter('{"timestamp": "%(asctime)-15s", "transaction-id": ' + f'"{transaction_id}"' + ', "level": "%(levelname)s", "message": %(message)s}')
     handler.setLevel(DEBUG)
     handler.setFormatter(formatter)
     logger.setLevel(DEBUG)
