@@ -1,4 +1,5 @@
 from . import get_module_logger
+from .base_market import BaseMarket
 
 
 logger = get_module_logger()
@@ -13,6 +14,7 @@ class Trader():
         # クラスの初期パラメータを設定する
         logger.debug('Trader.__init__()')
         self.market = market
+        assert isinstance(market, BaseMarket)
         self.threshold_differential = threshold_differential
         logger.info(f'set market: {type(self.market).__name__}')
         logger.info(f'set threshold differential: {self.threshold_differential}')
