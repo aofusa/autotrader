@@ -2,7 +2,9 @@ import json
 import uuid
 import time
 from urllib import request
-from logging import getLogger, StreamHandler, DEBUG, Formatter
+from logging import getLogger, StreamHandler, DEBUG, INFO, Formatter
+import os
+import argparse
 import random
 
 
@@ -60,9 +62,9 @@ class MockStockMarket():
         self.trade_log = trade_log
         self.differential = differential
         self.trade_result = trade_result
-        logger.info(f'set trade_log: {trade_log}')
-        logger.info(f'set differential: {differential}')
-        logger.info(f'set trade_result: {trade_result}')
+        logger.debug(f'set trade_log: {trade_log}')
+        logger.debug(f'set differential: {differential}')
+        logger.debug(f'set trade_result: {trade_result}')
 
     def check_latest_trade(self):
         # 最後の取引履歴を確認する
@@ -73,13 +75,13 @@ class MockStockMarket():
         # モックの値が指定されていればその値を返却する
         # 指定されていなければ乱数を返す
         logger.debug('MockStockMarket.check_latest_trade()')
-        logger.info(f'mock trade log: {self.trade_log}')
+        logger.debug(f'mock trade log: {self.trade_log}')
         if self.trade_log:
-            logger.info(f'response trade log: {self.trade_log}')
+            logger.debug(f'response trade log: {self.trade_log}')
             return self.trade_log
         else:
             t = random.randint(-1,1)
-            logger.info(f'using random value: {t}')
+            logger.debug(f'using random value: {t}')
             return t
 
     def check_differential(self):
@@ -88,13 +90,13 @@ class MockStockMarket():
         # モックの値が指定されていればその値を返却する
         # 指定されていなければ乱数を返す
         logger.debug('MockStockMarket.check_differential()')
-        logger.info(f'mock differential: {self.differential}')
+        logger.debug(f'mock differential: {self.differential}')
         if self.differential:
-            logger.info(f'response differential: {self.differential}')
+            logger.debug(f'response differential: {self.differential}')
             return self.differential
         else:
             t = random.uniform(-1,1)
-            logger.info(f'using random value: {t}')
+            logger.debug(f'using random value: {t}')
             return t
 
     def buy(self):
@@ -106,13 +108,13 @@ class MockStockMarket():
         # モックの値が指定されていればその値を返却する
         # 指定されていなければ乱数を返す
         logger.debug('MockStockMarket.buy()')
-        logger.info(f'mock trade result: {self.trade_result}')
+        logger.debug(f'mock trade result: {self.trade_result}')
         if self.trade_result:
-            logger.info(f'response trade result: {self.trade_result}')
+            logger.debug(f'response trade result: {self.trade_result}')
             return self.trade_result
         else:
             t = random.randint(-1,1)
-            logger.info(f'using random value: {t}')
+            logger.debug(f'using random value: {t}')
             return t
 
     def sell(self):
@@ -124,13 +126,13 @@ class MockStockMarket():
         # モックの値が指定されていればその値を返却する
         # 指定されていなければ乱数を返す
         logger.debug('MockStockMarket.sell()')
-        logger.info(f'mock trade result: {self.trade_result}')
+        logger.debug(f'mock trade result: {self.trade_result}')
         if self.trade_result:
-            logger.info(f'response trade result: {self.trade_result}')
+            logger.debug(f'response trade result: {self.trade_result}')
             return self.trade_result
         else:
             t = random.randint(-1,1)
-            logger.info(f'using random value: {t}')
+            logger.debug(f'using random value: {t}')
             return t
 
 
@@ -175,6 +177,7 @@ class Trader():
         is_deal = self.decision_deal(self.threshold_differential, differential, latest_trade_log)
         logger.info(f'dealing: {is_deal}  (1: buy, -1: sell, 0: no deal)')
 
+        logger.info('run deal')
         is_success = None
         if is_deal == 1:
             # 購入取引する判断をしたので購入を行う
@@ -217,14 +220,14 @@ class Trader():
         logger.info(f'trade log: {trade_log}  (1: buy, -1: sell, 0: nothing)')
 
         # thresholdとdifferentialの絶対値を比較する
-        logger.info('check differential and threshold')
+        logger.debug('check differential and threshold')
         if max(differential, differential*-1) < threshold:
             # differentialの絶対値がthreshold未満なので何もしない
             logger.info('|differential| < threshold. no deal')
             return 0
 
         # 取引履歴と傾きの一致を確認する
-        logger.info('check trade_log and differential')
+        logger.debug('check trade_log and differential')
         if trade_log == 1 and differential >= 0:
             # 傾きが+で最後の購入履歴が売却だったなら、購入する
             logger.info('trade log == buy(1) and differential >= 0. will execute buy')
@@ -297,5 +300,16 @@ def main():
     
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Auto Trading System")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--mock", help="use mock market (default)", action="store_true", default=True)
+    group.add_argument("--bitflyer", help="use bitflyer market", action="store_true")
+    parser.add_argument("-v", "--verbosity", help="increase output verbosity", action="store_true")
+    parser.add_argument("--dryrun", help="Do only check. Do NOT execute any buy/sell functions", action="store_true")
+    args = parser.parse_args()
+
+    if not args.verbosity:
+        logger.setLevel(INFO)
+
     main()
 
