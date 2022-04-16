@@ -51,20 +51,26 @@ logger.propagate = False
 
 class MockStockMarket():
 
+    is_dryrun = False
     trade_log = None
     differential = None
     trade_result = None
 
-    def set_mock_parameter(self, trade_log=None, differential=None, trade_result=None):
+    def __init__(self, trade_log=None, differential=None, trade_result=None, is_dryrun=False):
+        self.set_mock_parameter(trade_log, differential, trade_result, is_dryrun)
+
+    def set_mock_parameter(self, trade_log=None, differential=None, trade_result=None, is_dryrun=False):
         # モックとして返す値を設定する
         # Noneが指定されていた場合は乱数を返すようにする
         logger.debug('MockStockMarket.set_mock_parameter()')
         self.trade_log = trade_log
         self.differential = differential
         self.trade_result = trade_result
+        self.is_dryrun = is_dryrun
         logger.debug(f'set trade_log: {trade_log}')
         logger.debug(f'set differential: {differential}')
         logger.debug(f'set trade_result: {trade_result}')
+        logger.debug(f'set dryrun: {is_dryrun}')
 
     def check_latest_trade(self):
         # 最後の取引履歴を確認する
@@ -271,15 +277,22 @@ class Trader():
         return self.market.sell()
 
 
-def main():
+def main(use_bitflyer, threshold, wait_time, dryrun):
     logger.info('start trade program')
     update_transaction_id(handler, uuid.uuid4().hex)
 
     # 取引を行うプログラムの準備を行う
     logger.info('create Market instance')
-    market = MockStockMarket()
+    market = None
+    if use_bitflyer:
+        logger.info('use bitflyer market')
+        market = MockStockMarket(is_dryrun=dryrun)  # TODO: 
+    else:
+        logger.info('use mock market')
+        market = MockStockMarket(is_dryrun=dryrun)
+
     logger.info('create Trader instance')
-    trader = Trader(market, 0.1)
+    trader = Trader(market, threshold)
     trader.initialize()
 
     # Event loop
@@ -295,8 +308,8 @@ def main():
         logger.info('end trade')
 
         # 1分間に100回までがAPIリクエストの上限なので注意する（処理を1秒ごとに限定して 1分60回に抑える）
-        logger.info('wait a 1 sec')
-        time.sleep(1)
+        logger.info(f'wait a {wait_time} sec')
+        time.sleep(wait_time)
     
 
 if __name__ == '__main__':
@@ -304,6 +317,8 @@ if __name__ == '__main__':
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--mock", help="use mock market (default)", action="store_true", default=True)
     group.add_argument("--bitflyer", help="use bitflyer market", action="store_true")
+    parser.add_argument("-t", "--threshold", help="set threshold (default 0.1)", type=float, default=0.1)
+    parser.add_argument("-w", "--wait", help="set sleep time (default 1 second)", type=int, default=1)
     parser.add_argument("-v", "--verbosity", help="increase output verbosity", action="store_true")
     parser.add_argument("--dryrun", help="Do only check. Do NOT execute any buy/sell functions", action="store_true")
     args = parser.parse_args()
@@ -311,5 +326,8 @@ if __name__ == '__main__':
     if not args.verbosity:
         logger.setLevel(INFO)
 
-    main()
+    if args.dryrun:
+        logger.info('dryrun mode')
+
+    main(args.bitflyer, args.threshold, args.wait, args.dryrun)
 
