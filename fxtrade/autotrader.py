@@ -1,16 +1,17 @@
+import json
 import time
 import argparse
 import logging
 
 
 from market import get_module_logger, update_transaction_id
-from market import Trader, MockStockMarket
+from market import Trader, MockStockMarket, BitFlyerMarket
 
 
 logger = get_module_logger()
 
 
-def main(use_bitflyer, threshold, wait_time, dryrun):
+def main(config, use_bitflyer, threshold, wait_time, dryrun):
     logger.info('start trade program')
 
     # 取引を行うプログラムの準備を行う
@@ -18,7 +19,7 @@ def main(use_bitflyer, threshold, wait_time, dryrun):
     market = None
     if use_bitflyer:
         logger.info('use bitflyer market')
-        market = MockStockMarket(is_dryrun=dryrun)  # TODO: 
+        market = BitFlyerMarket(config=config.get('bitflyer'), is_dryrun=dryrun)
     else:
         logger.info('use mock market')
         market = MockStockMarket(is_dryrun=dryrun)
@@ -46,6 +47,7 @@ def main(use_bitflyer, threshold, wait_time, dryrun):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Auto Trading System")
+    parser.add_argument("config", help="Read config file")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--mock", help="use mock market (default)", action="store_true", default=True)
     group.add_argument("--bitflyer", help="use bitflyer market", action="store_true")
@@ -61,5 +63,9 @@ if __name__ == '__main__':
     if args.dryrun:
         logger.info('dryrun mode')
 
-    main(args.bitflyer, args.threshold, args.wait, args.dryrun)
+    config = None
+    with open(args.config, 'r') as f:
+        config = json.load(f)
+
+    main(config, args.bitflyer, args.threshold, args.wait, args.dryrun)
 
