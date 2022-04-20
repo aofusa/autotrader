@@ -138,7 +138,7 @@ class BitFlyerMarket(BaseMarket):
         logger.info(f'call api: {self.chart_endpoint}')
         try:
             cryptwatch_response = None
-            with request.utlopen(self.chart_endpoint) as response:
+            with request.urlopen(self.chart_endpoint) as response:
                 cryptwatch_response = response
             html = cryptwatch_response.read()
             data_raw = json.loads(html)
