@@ -4,8 +4,8 @@ import argparse
 import logging
 
 
-from market import get_module_logger, update_transaction_id
-from market import Trader, MockStockMarket, BitFlyerMarket
+from lib import get_module_logger, update_transaction_id
+from lib import Trader, MockStockMarket, BitFlyerMarket
 
 
 logger = get_module_logger()

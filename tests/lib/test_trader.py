@@ -1,8 +1,8 @@
 import unittest
 
 
-from fxtrade.market import Trader, MockStockMarket
-from fxtrade.market import get_module_logger, update_transaction_id
+from fxtrade.lib import Trader, MockStockMarket
+from fxtrade.lib import get_module_logger, update_transaction_id
 
 
 logger = get_module_logger()

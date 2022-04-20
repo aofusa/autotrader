@@ -1,6 +1,6 @@
 import random
-from . import get_module_logger
-from .base_market import BaseMarket
+from .. import get_module_logger
+from ..base_market import BaseMarket
 
 
 logger = get_module_logger()
