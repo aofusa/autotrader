@@ -18,7 +18,7 @@ BitFlyer API を利用して自動トレードを行う
 
 - プログラムの実行
 ```sh
-python3 fxtrade/autotrader.py -v --mock --dryrun
+python3 fxtrade/autotrader.py ./config.json -v --mock --wait 180 --threshold 0.1 --dryrun
 ```
 
 - テストの実行
@@ -31,4 +31,7 @@ API
 [trade](https://lightning.bitflyer.com/trade)
 
 [API](https://lightning.bitflyer.com/docs?lang=ja&_gl=1*1xpgy5d*_ga*MTAwNzY1MDEzNS4xNjI3NDUxODQ5*_ga_3VYMQNCVSM*MTY0Njc5NjcxNi4xMS4xLjE2NDY3OTY5MTguNjA.)
+
+チャートの取得はcryptwatchのapiを使用する
+[cryptwatch](https://docs.cryptowat.ch/rest-api/markets/ohlc)
 
