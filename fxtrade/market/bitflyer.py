@@ -137,10 +137,8 @@ class BitFlyerMarket(BaseMarket):
         logger.info('get market information')
         logger.info(f'call api: {self.chart_endpoint}')
         try:
-            cryptwatch_response = None
             with request.urlopen(self.chart_endpoint) as response:
-                cryptwatch_response = response
-            html = cryptwatch_response.read()
+                html = response.read()
             data_raw = json.loads(html)
         except Exception as e:
             logger.warning(e)
