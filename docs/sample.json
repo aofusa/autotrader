@@ -1,0 +1,20 @@
+{
+    "bitflyer": {
+        "label": "{{ your_key_label }}",
+        "key": "{{ your_key }}",
+        "secret": "{{ your_secret }}",
+        "type": "180",
+        "span": 50,
+        "minimum-trade-size": 0.01,
+        "endpoint": {
+            "url": "https://api.bitflyer.com",
+            "check-collateral": "/v1/me/getcollateralaccounts",
+            "check-board": "/v1/getboard",
+            "check-trade": "/v1/me/getchildorders",
+            "buy": "/v1/me/sendchildorder",
+            "sell": "/v1/me/sendchildorder",
+            "cancel": "/v1/me/cancelchildorder",
+            "chart": "https://api.cryptowat.ch/markets/bitflyer/btcjpy/ohlc"
+        }
+    }
+}
