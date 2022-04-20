@@ -195,15 +195,15 @@ class BitFlyerMarket(BaseMarket):
 
         if slope_a > 0 and slope_b < 0:  # +に反転した場合
             # 購入するために正の値を返却する
-            logger.info(f'response plus value: {slope_a}')
+            logger.info(f'differential response plus value: {slope_a}')
             return slope_a
         elif slope_a < 0 and slope_b > 0:  # -に反転した場合
             # 売却するために負の値を返却する
-            logger.info(f'response minus value: {slope_a}')
+            logger.info(f'differential response minus value: {slope_a}')
             return slope_a
         else:  # 符号が反転していない場合
             # 符号が反転していない場合は何もしない
-            logger.info('response nothing: 0')
+            logger.info('differential response nothing: 0')
             return 0
 
     def buy(self):
