@@ -187,24 +187,38 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'sma slope: {sma_slope}')
         logger.debug(f'ema slope: {ema_slope}')
 
-        # 最新の傾きの反転具合によって符号を変更してレスポンスする
-        slope_a = sma_slope[-1]  # 最新の傾き
-        slope_b = sma_slope[-2]  # 一つ前の傾き
-        logger.debug(f'latest slope: {slope_a}')
-        logger.debug(f'previous slope: {slope_b}')
+        # 前回の確認から今回の確認までの間に急激な変化があったかどうかを確認する。あれば売買を行うようにレスポンスする
 
-        if slope_a > 0 and slope_b < 0:  # +に反転した場合
-            # 購入するために正の値を返却する
-            logger.info(f'differential response plus value: {slope_a}')
-            return slope_a
-        elif slope_a < 0 and slope_b > 0:  # -に反転した場合
-            # 売却するために負の値を返却する
-            logger.info(f'differential response minus value: {slope_a}')
-            return slope_a
-        else:  # 符号が反転していない場合
-            # 符号が反転していない場合は何もしない
-            logger.info('differential response nothing: 0')
-            return 0
+        # 傾きの反転をチェック
+        reverse = []
+        for index in range(len(sma_slope)-1):
+            if sma_slope[index+1] > 0 and sma_slope[index] < 0:
+                # +に反転している
+                reverse.append(1)
+            elif sma_slope[index+1] < 0 and sma_slope[index] > 0:
+                # -に反転している
+                reverse.append(-1)
+            else:
+                # 反転は起きていない
+                reverse.append(0)
+        logger.debug(f'reverse: {reverse}')
+
+        latest_reverse_list = [x for x in reverse if x != 0]  # 傾きが急激に発生したもののみに絞り込む。その中での最新の情報を取得する
+        logger.debug(f'latest_reverse_list: {latest_reverse_list}')
+
+        # 急激な傾きが一度も起きてなければ最新の傾きを返却する
+        if len(latest_reverse_list) == 0:
+            if len(reverse) > 0:
+                return reverse[-1]
+            else:
+                # 傾きの情報がなければ傾きはなかったとして返す
+                return 0
+
+        # 最新の傾きの情報のみをレスポンスする
+        latest_reverse = latest_reverse_list[-1]
+        logger.debug(f'latest_reverse: {latest_reverse}')
+
+        return latest_reverse
 
     def buy(self):
         # 購入取引を実施する
