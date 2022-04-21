@@ -31,19 +31,29 @@ def main(config, use_bitflyer, threshold, wait_time, dryrun):
     # Event loop
     logger.info('start event loop')
     while True:
-        # 取引ごとにログを終えるようにトランザクションIDを更新する
-        update_transaction_id()
-        logger.info('update transaction id')
+        # 予期せぬエラーで停止されると困るのでtryでくくる
+        try:
+            # 取引ごとにログを追えるようにトランザクションIDを更新する
+            update_transaction_id()
+            logger.debug('update transaction id')
 
-        # 取引を行う
-        logger.info('start trade')
-        trader.trade()
-        logger.info('end trade')
+            # 取引を行う
+            logger.info('start trade')
+            trader.trade()
+            logger.info('end trade')
 
-        # 1分間に100回までがAPIリクエストの上限なので注意する（処理を1秒ごとに限定して 1分60回に抑える）
-        logger.info(f'wait a {wait_time} sec')
-        time.sleep(wait_time)
-    
+        except Exception as e:
+            # 予期せぬエラーが発生したがそのままループを継続させる
+            logger.warning(f'unhandled error occurred. but keep event loop. error: {e}')
+
+        finally:
+            # 1分間に100回までがAPIリクエストの上限なので注意する（処理を1秒ごとに限定して 1分60回に抑える）
+            logger.info(f'wait a {wait_time} sec')
+            try:
+                time.sleep(wait_time)
+            except Exception as time_error:
+                logger.warning(f'time.sleep() error occurred. error: {time_error}')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Auto Trading System")
