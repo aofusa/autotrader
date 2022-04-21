@@ -31,6 +31,7 @@ class BitFlyerMarket(BaseMarket):
 
         self.url = self.config.get('endpoint').get('url')
         self.check_collateral_endpoint = self.config.get('endpoint').get('check-collateral')  # GET
+        self.check_positions_endpoint = self.config.get('endpoint').get('check-positions')  # GET
         self.check_ticker_endpoint = self.config.get('endpoint').get('check-ticker')  # GET
         self.check_trade_endpoint = self.config.get('endpoint').get('check-trade')  # GET
         self.buy_endpoint = self.config.get('endpoint').get('buy')  # POST
@@ -286,7 +287,7 @@ class BitFlyerMarket(BaseMarket):
         method = 'POST'
         path = self.sell_endpoint
 
-        (_, collateral_btc) = self.get_collateral()
+        collateral_btc = self.get_positions()
         logger.debug(f'collateral btc: {collateral_btc}')
         logger.info(f'set deal size: {collateral_btc}')
 
@@ -464,4 +465,45 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'size: {size}')
 
         return size
+
+    def get_positions(self):
+        # 現在の建玉しているBTC額を取得する
+        logger.debug(f'{type(self).__name__}.get_positions()')
+
+        key = self.key
+        secret = self.secret
+        url = self.url
+
+        timestamp = str(int(time.time()*1000))
+        method = 'GET'
+        path = self.check_positions_endpoint
+
+        text = timestamp + method + path
+        sign = hmac.new(secret.encode(), text.encode(), hashlib.sha256).hexdigest()
+
+        headers = {
+            'ACCESS-KEY': key,
+            'ACCESS-TIMESTAMP': timestamp,
+            'ACCESS-SIGN': sign,
+        }
+
+        logger.info(f'call api: {url+path}')
+        logger.debug(f'headers: {headers}')
+        req = request.Request(url+path, b'', headers, method=method)
+
+        try:
+            with request.urlopen(req) as response:
+                the_page = response.read()
+            positions = json.loads(the_page)
+        except Exception as e:
+            # 取得に失敗したので0（所有BTC0）を返す
+            logger.warning(e)
+            return 0
+        logger.debug(f'positions: {positions}')
+
+        # 建玉しているBTC額の計算
+        btc = sum([x.get('size') for x in positions if x.get('side') == 'BUY'])
+        logger.info(f'btc: {btc}')
+
+        return btc
 
