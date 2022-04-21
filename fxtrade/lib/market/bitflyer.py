@@ -66,7 +66,7 @@ class BitFlyerMarket(BaseMarket):
             'ACCESS-SIGN': sign,
         }
 
-        logger.info(f'call api: {url+path}')
+        logger.debug(f'call api: {url+path}')
         logger.debug(f'headers: {headers}')
         req = request.Request(url+path, b'', headers, method=method)
         
@@ -89,7 +89,7 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'trade result list(filter): {trade_results_list}')
         if len(trade_results_list) == 0:  # 空なら初めての取引なので購入を返す
             self.cancel_order_id = None  # キャンセルしないので注文IDにNoneを入れておく
-            logger.info('this is first deal. I will buy.')
+            logger.debug('this is first deal. I will buy.')
             return 1
 
         latest_trade_result = trade_results_list[0]  # 最新の取引内容
@@ -99,11 +99,11 @@ class BitFlyerMarket(BaseMarket):
             # 最後の取引内容が購入か売却か確認する
             if latest_trade_result.get('side') == 'SELL':
                 # 最後の取引内容が売るだったので、次は買う
-                logger.info('latest trade result is SELL. I will buy.')
+                logger.debug('latest trade result is SELL. I will buy.')
                 return 1
             elif latest_trade_result.get('side') == 'BUY':
                 # 最後の取引内容が買うだったので、次は売る
-                logger.info('latest trade result is BUY. I will sell.')
+                logger.debug('latest trade result is BUY. I will sell.')
                 return -1
             else:
                 # それ以外の場合は正しい結果が返って規定なので何もしない
@@ -115,11 +115,11 @@ class BitFlyerMarket(BaseMarket):
             # 最後の取引内容が購入か売却か確認する
             if latest_trade_result.get('side') == 'SELL':
                 # 最後の取引内容が売るだったので、次は買う
-                logger.info(f'latest trade result is SELL(yet completed: {self.cancel_order_id}). I will buy(cancel).')
+                logger.debug(f'latest trade result is SELL(yet completed: {self.cancel_order_id}). I will buy(cancel).')
                 return 1
             elif latest_trade_result.get('side') == 'BUY':
                 # 最後の取引内容が買うだったので、次は売る
-                logger.info(f'latest trade result is BUY(yet completed: {self.cancel_order_id}). I will sell(cancel).')
+                logger.debug(f'latest trade result is BUY(yet completed: {self.cancel_order_id}). I will sell(cancel).')
                 return -1
             else:
                 # それ以外の場合は正しい結果が返ってきていないので何もしない
@@ -135,8 +135,8 @@ class BitFlyerMarket(BaseMarket):
         # 現在の市場の動向を確認する
         logger.debug(f'{type(self).__name__}.check_differential()')
 
-        logger.info('get market information')
-        logger.info(f'call api: {self.chart_endpoint}')
+        logger.debug('get market information')
+        logger.debug(f'call api: {self.chart_endpoint}')
         try:
             with request.urlopen(self.chart_endpoint) as response:
                 html = response.read()
@@ -206,7 +206,7 @@ class BitFlyerMarket(BaseMarket):
 
         if self.cancel_order_id:
             # キャンセルが指定されている場合はキャンセルを行う
-            logger.info('I will cancel instead buy.')
+            logger.debug('I will cancel instead buy.')
             return self.cancel_order()
 
         key = self.key
@@ -223,7 +223,7 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'latest ticker price: {latest_ticker_price}')
         logger.debug(f'collateral jpy: {collateral_jpy}')
         logger.debug(f'minimum trade size: {self.minimum_trade_size}')
-        logger.info(f'set deal size: {deal_size}')
+        logger.debug(f'set deal size: {deal_size}')
 
         body = json.dumps(
             {
@@ -244,7 +244,7 @@ class BitFlyerMarket(BaseMarket):
             'Content-Type': 'application/json'
         }
 
-        logger.info(f'call api: {url+path}')
+        logger.debug(f'call api: {url+path}')
         logger.debug(f'headers: {headers}')
         logger.debug(f'body: {body}')
         req = request.Request(url+path, body.encode('utf-8'), headers, method=method)
@@ -255,16 +255,19 @@ class BitFlyerMarket(BaseMarket):
                 with request.urlopen(req) as response:
                     child_order_acceptance_id_raw = response.read()
                 child_order_acceptance_id = json.loads(child_order_acceptance_id_raw)
-                logger.info(f'child_order_acceptance_id: {child_order_acceptance_id}')
+                logger.debug(f'child_order_acceptance_id: {child_order_acceptance_id}')
                 # 売買に成功
+                logger.info(f'trade: buy success, price: {latest_ticker_price} (JPY/BTC), size: {deal_size}, actual: {deal_size*latest_ticker_price}.')
                 return 1
             except Exception as e:
                 # 売買に失敗した
                 logger.warning(e)
+                logger.info(f'trade: buy failed, price: {latest_ticker_price} (JPY/BTC), size: {deal_size}, actual: {deal_size*latest_ticker_price}.')
                 return -1
         else:
             # dryrunが指定されているので何もしない
-            logger.info('dryrun mode is enable. did not buy.')
+            logger.debug('dryrun mode is enable. did not buy.')
+            logger.info(f'trade: buy dryrun, price: {latest_ticker_price} (JPY/BTC), size: {deal_size}, actual: {deal_size*latest_ticker_price}.')
             return 0
 
     def sell(self):
@@ -276,7 +279,7 @@ class BitFlyerMarket(BaseMarket):
 
         if self.cancel_order_id:
             # キャンセルが指定されている場合はキャンセルを行う
-            logger.info('I will cancel instead buy.')
+            logger.debug('I will cancel instead buy.')
             return self.cancel_order()
 
         key = self.key
@@ -288,8 +291,10 @@ class BitFlyerMarket(BaseMarket):
         path = self.sell_endpoint
 
         collateral_btc = self.get_positions()
+        latest_ticker_price = self.get_ticker()
+        logger.debug(f'latest ticker price: {latest_ticker_price}')
         logger.debug(f'collateral btc: {collateral_btc}')
-        logger.info(f'set deal size: {collateral_btc}')
+        logger.debug(f'set deal size: {collateral_btc}')
 
         body = json.dumps(
             {
@@ -310,7 +315,7 @@ class BitFlyerMarket(BaseMarket):
             'Content-Type': 'application/json'
         }
 
-        logger.info(f'call api: {url+path}')
+        logger.debug(f'call api: {url+path}')
         logger.debug(f'headers: {headers}')
         logger.debug(f'body: {body}')
         req = request.Request(url+path, body.encode('utf-8'), headers, method=method)
@@ -321,16 +326,19 @@ class BitFlyerMarket(BaseMarket):
                 with request.urlopen(req) as response:
                     child_order_acceptance_id_raw = response.read()
                 child_order_acceptance_id = json.loads(child_order_acceptance_id_raw)
-                logger.info(f'child_order_acceptance_id: {child_order_acceptance_id}')
+                logger.debug(f'child_order_acceptance_id: {child_order_acceptance_id}')
                 # 売買に成功
+                logger.info(f'trade: sell success, price: {latest_ticker_price} (JPY/BTC), size: {collateral_btc}, actual: {collateral_btc*latest_ticker_price}.')
                 return 1
             except Exception as e:
                 # 売買に失敗した
                 logger.warning(e)
+                logger.info(f'trade: sell failed, price: {latest_ticker_price} (JPY/BTC), size: {collateral_btc}, actual: {collateral_btc*latest_ticker_price}.')
                 return -1
         else:
             # dryrunが指定されているので何もしない
-            logger.info('dryrun mode is enable. did not buy.')
+            logger.debug('dryrun mode is enable. did not buy.')
+            logger.info(f'trade: sell dryrun, price: {latest_ticker_price} (JPY/BTC), size: {collateral_btc}, actual: {collateral_btc*latest_ticker_price}.')
             return 0
 
     def cancel(self):
@@ -362,7 +370,7 @@ class BitFlyerMarket(BaseMarket):
             'Content-Type': 'application/json'
         }
 
-        logger.info(f'call api: {url+path}')
+        logger.debug(f'call api: {url+path}')
         logger.debug(f'headers: {headers}')
         logger.debug(f'body: {body}')
         req = request.Request(url+path, body.encode('utf-8'), headers, method=method)
@@ -372,16 +380,19 @@ class BitFlyerMarket(BaseMarket):
             try:
                 with request.urlopen(req) as response:
                     response.read()
-                logger.info(f'execute cancel. id: {self.cancel_order_id}')
+                logger.debug(f'execute cancel. id: {self.cancel_order_id}')
                 # キャンセルに成功
+                logger.info(f'trade: cancel success, id: {self.cancel_order_id}.')
                 return 1
             except Exception as e:
                 # キャンセルに失敗
                 logger.warning(f'failed to execute cancel. id: {self.cancel_order_id}. error: {e}')
+                logger.info(f'trade: cancel failed, id: {self.cancel_order_id}.')
                 return -1
         else:
             # dryrunが指定されているので何もしない
-            logger.info('dryrun mode is enable. did not buy.')
+            logger.debug('dryrun mode is enable. did not buy.')
+            logger.info(f'trade: cancel dryrun, id: {self.cancel_order_id}.')
             return 0
 
     def get_ticker(self):
@@ -426,7 +437,7 @@ class BitFlyerMarket(BaseMarket):
             'ACCESS-SIGN': sign,
         }
 
-        logger.info(f'call api: {url+path}')
+        logger.debug(f'call api: {url+path}')
         logger.debug(f'headers: {headers}')
         req = request.Request(url+path, b'', headers, method=method)
 
@@ -450,7 +461,7 @@ class BitFlyerMarket(BaseMarket):
                 collateral_btc = x.get('amount')
 
         # 日本円, BTCの組を返す
-        logger.info(f'collaterals: {collateral_jpy} (JPY), {collateral_btc} (BTC)')
+        logger.debug(f'collaterals: {collateral_jpy} (JPY), {collateral_btc} (BTC)')
         return (collateral_jpy, collateral_btc)
 
     def get_jpy_deal_size(self, ticker, collateral, minimum):
@@ -487,7 +498,7 @@ class BitFlyerMarket(BaseMarket):
             'ACCESS-SIGN': sign,
         }
 
-        logger.info(f'call api: {url+path}')
+        logger.debug(f'call api: {url+path}')
         logger.debug(f'headers: {headers}')
         req = request.Request(url+path, b'', headers, method=method)
 
@@ -503,7 +514,7 @@ class BitFlyerMarket(BaseMarket):
 
         # 建玉しているBTC額の計算
         btc = sum([x.get('size') for x in positions if x.get('side') == 'BUY'])
-        logger.info(f'btc: {btc}')
+        logger.debug(f'btc: {btc}')
 
         return btc
 

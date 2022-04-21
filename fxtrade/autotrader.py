@@ -13,9 +13,10 @@ logger = get_module_logger()
 
 def main(config, use_bitflyer, threshold, wait_time, dryrun):
     logger.info('start trade program')
+    logger.debug(f'config: {config}')
 
     # 取引を行うプログラムの準備を行う
-    logger.info('create Market instance')
+    logger.debug('create Market instance')
     market = None
     if use_bitflyer:
         logger.info('use bitflyer market')
@@ -24,7 +25,7 @@ def main(config, use_bitflyer, threshold, wait_time, dryrun):
         logger.info('use mock market')
         market = MockStockMarket(is_dryrun=dryrun)
 
-    logger.info('create Trader instance')
+    logger.debug('create Trader instance')
     trader = Trader(market, threshold)
     trader.initialize()
 
@@ -38,9 +39,9 @@ def main(config, use_bitflyer, threshold, wait_time, dryrun):
             logger.debug('update transaction id')
 
             # 取引を行う
-            logger.info('start trade')
+            logger.debug('start trade')
             trader.trade()
-            logger.info('end trade')
+            logger.debug('end trade')
 
         except Exception as e:
             # 予期せぬエラーが発生したがそのままループを継続させる
@@ -48,7 +49,7 @@ def main(config, use_bitflyer, threshold, wait_time, dryrun):
 
         finally:
             # 1分間に100回までがAPIリクエストの上限なので注意する（処理を1秒ごとに限定して 1分60回に抑える）
-            logger.info(f'wait a {wait_time} sec')
+            logger.debug(f'wait a {wait_time} sec')
             try:
                 time.sleep(wait_time)
             except Exception as time_error:

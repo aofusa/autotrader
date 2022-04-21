@@ -16,8 +16,8 @@ class Trader():
         self.market = market
         assert isinstance(market, BaseMarket)
         self.threshold_differential = threshold_differential
-        logger.info(f'set market: {type(self.market).__name__}')
-        logger.info(f'set threshold differential: {self.threshold_differential}')
+        logger.debug(f'set market: {type(self.market).__name__}')
+        logger.debug(f'set threshold differential: {self.threshold_differential}')
 
     def initialize(self):
         # 初期化を行う
@@ -30,43 +30,43 @@ class Trader():
         # 買う -> 売る の順番で必ず売買を行う
         # 最新の取引履歴を確認し、買っていれば売る、売っていれば買うのみを行う
         # まだ一度も売買を行っていなければ、売った後として処理する
-        logger.info('check latest trade')
+        logger.debug('check latest trade')
         latest_trade_log = self.check_latest_trade()
-        logger.info(f'latest trade: {latest_trade_log}  (1: buy, -1: sell, 0: nothing)')
+        logger.debug(f'latest trade: {latest_trade_log}  (1: buy, -1: sell, 0: nothing)')
 
         # 移動平均の変化を確認し、傾きが急激であれば売買を行う
         # 傾きには下がる傾きと上がる傾きがある
         # 上がる傾きの時には買い、下がる傾きの時は売る
         # 直前の売る・買うの判断と合わせて、不一致の場合は購入しない
-        logger.info('check differential')
+        logger.debug('check differential')
         differential = self.check_differential()
-        logger.info(f'differential: {differential}')
+        logger.debug(f'differential: {differential}')
 
         # 取引を行うかどうか確認し取引を実行する
-        logger.info('check should deal or not')
+        logger.debug('check should deal or not')
         is_deal = self.decision_deal(self.threshold_differential, differential, latest_trade_log)
-        logger.info(f'dealing: {is_deal}  (1: buy, -1: sell, 0: no deal)')
+        logger.debug(f'dealing: {is_deal}  (1: buy, -1: sell, 0: no deal)')
 
-        logger.info('run deal')
+        logger.debug('run deal')
         is_success = None
         if is_deal == 1:
             # 購入取引する判断をしたので購入を行う
-            logger.info('execute buy deal')
+            logger.debug('execute buy deal')
             is_success = self.buy()
         elif is_deal == -1:
             # 売却取引する判断をしたので売却を行う
-            logger.info('execute sell deal')
+            logger.debug('execute sell deal')
             is_success = self.sell()
         else:
             # 取引しない判断をしたので何もしない
-            logger.info('no deal')
+            logger.debug('no deal')
             is_success = 0
 
         # 取引の実行結果成功したかどうかを返却する
         # 1: 成功した
         # -1: 失敗した
         # 0: 取引を行わなかった
-        logger.info(f'deal result: {is_success}  (1: success, -1: failed, 0: no deal)')
+        logger.debug(f'deal result: {is_success}  (1: success, -1: failed, 0: no deal)')
         return is_success
 
     def decision_deal(self, threshold, differential, trade_log):
@@ -85,30 +85,30 @@ class Trader():
         # trade_logとdifferentialの符号が一致していなければ購入も売却もしない
 
         # 購入なら1、売却なら-1、何もしないなら0を返す
-        logger.info(f'threshold: {threshold}')
-        logger.info(f'differential: {differential}')
-        logger.info(f'trade log: {trade_log}  (1: buy, -1: sell, 0: nothing)')
+        logger.debug(f'threshold: {threshold}')
+        logger.debug(f'differential: {differential}')
+        logger.debug(f'trade log: {trade_log}  (1: buy, -1: sell, 0: nothing)')
 
         # thresholdとdifferentialの絶対値を比較する
         logger.debug('check differential and threshold')
         if max(differential, differential*-1) < threshold:
             # differentialの絶対値がthreshold未満なので何もしない
-            logger.info('|differential| < threshold. no deal')
+            logger.debug('|differential| < threshold. no deal')
             return 0
 
         # 取引履歴と傾きの一致を確認する
         logger.debug('check trade_log and differential')
         if trade_log == 1 and differential >= 0:
             # 傾きが+で最後の購入履歴が売却だったなら、購入する
-            logger.info('trade log == buy(1) and differential >= 0. will execute buy')
+            logger.debug('trade log == buy(1) and differential >= 0. will execute buy')
             return 1
         elif trade_log == -1 and differential < 0:
             # 傾きが-で最後の購入履歴が購入だったなら、売却する
-            logger.info('trade log == sell(-1) and differential < 0. will execute sell')
+            logger.debug('trade log == sell(-1) and differential < 0. will execute sell')
             return -1
         else:
             # 符号が不一致なら何もしない
-            logger.info('trade log and differential is mismatch. no deal')
+            logger.debug('trade log and differential is mismatch. no deal')
             return 0
 
     def check_latest_trade(self):
