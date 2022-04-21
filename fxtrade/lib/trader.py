@@ -66,7 +66,7 @@ class Trader():
         # 1: 成功した
         # -1: 失敗した
         # 0: 取引を行わなかった
-        logger.info(f'deal result: {is_success}  (1: buy, -1: sell, 0: no deal)')
+        logger.info(f'deal result: {is_success}  (1: success, -1: failed, 0: no deal)')
         return is_success
 
     def decision_deal(self, threshold, differential, trade_log):
