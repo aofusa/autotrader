@@ -272,7 +272,7 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'body: {body}')
         req = request.Request(url+path, body.encode('utf-8'), headers, method=method)
 
-        if not self.dryrun:
+        if not self.is_dryrun:
             # dryrunが指定されていなければ実際に売買を行う
             try:
                 with request.urlopen(req) as response:
@@ -338,7 +338,7 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'body: {body}')
         req = request.Request(url+path, body.encode('utf-8'), headers, method=method)
 
-        if not self.dryrun:
+        if not self.is_dryrun:
             # dryrunが指定されていなければ実際に売買を行う
             try:
                 with request.urlopen(req) as response:
@@ -390,7 +390,7 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'body: {body}')
         req = request.Request(url+path, body.encode('utf-8'), headers, method=method)
 
-        if not self.dryrun:
+        if not self.is_dryrun:
             # dryrunが指定されていなければ実際に売買を行う
             try:
                 with request.urlopen(req) as response:
