@@ -461,7 +461,7 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'minimum: {minimum}')
 
         # 最小取引額を下回る場合は最小取引額になるように修正する
-        size = max(collateral / ticker, minimum)
+        size = float(f'{max(collateral / ticker, minimum):.7}')
         logger.debug(f'size: {size}')
 
         return size
