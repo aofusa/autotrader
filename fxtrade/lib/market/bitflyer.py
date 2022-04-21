@@ -5,7 +5,7 @@ import hashlib
 from urllib import request
 
 
-from .. import get_module_logger
+from .. import get_module_logger, calc_sma, calc_ema, calc_ma_slope, check_flip_slope
 from ..base_market import BaseMarket
 
 
@@ -160,47 +160,23 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'get close price list: {data_closeprice}')
 
         span = self.span  # 50件(3*50=150分)の移動平均線
-        sma = []  # 単純移動平均線の作成
-        ema = []  # 指数平滑移動平均線の作成
-        for index in range(len(data_closeprice)-span):
-            s = sum(data_closeprice[index:index+span])
-            m = s / span
-            sma.append(m)
-
-            es = s + data_closeprice[index+span]
-            em = es / (span+1)
-            ema.append(em)
+        sma = calc_sma(data_closeprice, span)  # 単純移動平均線の作成
+        ema = calc_ema(data_closeprice, span)  # 指数平滑移動平均線の作成
         logger.debug(f'span: {span}')
         logger.debug(f'simple moving average: {sma}')
         logger.debug(f'elastic moving average: {ema}')
 
         # 傾きを計算する
-        sma_slope = []
-        ema_slope = []
         slope_span = 1
-        for index in range(len(sma)):
-            s_slope = (sma[index] - sma[index-slope_span]) / (index - (index - span))
-            sma_slope.append(s_slope)
-
-            es_slope = (ema[index] - ema[index-slope_span]) / (index - (index - span))
-            ema_slope.append(es_slope)
+        sma_slope = calc_ma_slope(sma, slope_span)
+        ema_slope = calc_ma_slope(ema, slope_span)
         logger.debug(f'sma slope: {sma_slope}')
         logger.debug(f'ema slope: {ema_slope}')
 
         # 前回の確認から今回の確認までの間に急激な変化があったかどうかを確認する。あれば売買を行うようにレスポンスする
 
         # 傾きの反転をチェック
-        reverse = []
-        for index in range(len(sma_slope)-1):
-            if sma_slope[index+1] > 0 and sma_slope[index] < 0:
-                # +に反転している
-                reverse.append(1)
-            elif sma_slope[index+1] < 0 and sma_slope[index] > 0:
-                # -に反転している
-                reverse.append(-1)
-            else:
-                # 反転は起きていない
-                reverse.append(0)
+        reverse = check_flip_slope(sma_slope)
         logger.debug(f'reverse: {reverse}')
 
         latest_reverse_list = [x for x in reverse if x != 0]  # 傾きが急激に発生したもののみに絞り込む。その中での最新の情報を取得する
