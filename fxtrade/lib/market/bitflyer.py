@@ -31,7 +31,7 @@ class BitFlyerMarket(BaseMarket):
 
         self.url = self.config.get('endpoint').get('url')
         self.check_collateral_endpoint = self.config.get('endpoint').get('check-collateral')  # GET
-        self.check_board_endpoint = self.config.get('endpoint').get('check-board')  # GET
+        self.check_ticker_endpoint = self.config.get('endpoint').get('check-ticker')  # GET
         self.check_trade_endpoint = self.config.get('endpoint').get('check-trade')  # GET
         self.buy_endpoint = self.config.get('endpoint').get('buy')  # POST
         self.sell_endpoint = self.config.get('endpoint').get('sell')  # POST
@@ -240,10 +240,10 @@ class BitFlyerMarket(BaseMarket):
         method = 'POST'
         path = self.buy_endpoint
 
-        mid_board = self.get_mid_board()
         (collateral_jpy, _) = self.get_collateral()
-        deal_size = self.get_jpy_deal_size(mid_board, collateral_jpy, self.minimum_trade_size)
-        logger.debug(f'mid board: {mid_board}')
+        latest_ticker_price = self.get_ticker()
+        deal_size = self.get_jpy_deal_size(latest_ticker_price, collateral_jpy, self.minimum_trade_size)
+        logger.debug(f'latest ticker price: {latest_ticker_price}')
         logger.debug(f'collateral jpy: {collateral_jpy}')
         logger.debug(f'minimum trade size: {self.minimum_trade_size}')
         logger.info(f'set deal size: {deal_size}')
@@ -407,27 +407,26 @@ class BitFlyerMarket(BaseMarket):
             logger.info('dryrun mode is enable. did not buy.')
             return 0
 
-    def get_mid_board(self):
+    def get_ticker(self):
         # 取引額を取得する
         logger.debug(f'{type(self).__name__}.get_board()')
 
         url = self.url
-        path = self.check_board_endpoint
-        query = '?product_code=FX_BTC_JPY'
+        path = self.check_ticker_endpoint
 
-        logger.debug(f'call api: {url+path+query}')
+        logger.debug(f'call api: {url+path}')
         try:
-            req = request.Request(url+path+query)
+            req = request.Request(url+path)
             with request.urlopen(req) as response:
                 the_page = response.read()
-            board_raw = json.loads(the_page)
-            board = board_raw['mid_price']
+            ticker_raw = json.loads(the_page)
+            ticker = ticker_raw['ltp']
         except Exception as e:
             logger.warning(e)
             return 0
-        logger.debug(f'mid board data: {board}')
+        logger.debug(f'latest trade price: {ticker}')
 
-        return board
+        return ticker
 
     def get_collateral(self):
         # 現在の証拠金を取得する
@@ -477,15 +476,15 @@ class BitFlyerMarket(BaseMarket):
         logger.info(f'collaterals: {collateral_jpy} (JPY), {collateral_btc} (BTC)')
         return (collateral_jpy, collateral_btc)
 
-    def get_jpy_deal_size(self, board, collateral, minimum):
+    def get_jpy_deal_size(self, ticker, collateral, minimum):
         # 日本円で取引するときのBTCの数量を返す
         logger.debug(f'{type(self).__name__}.get_jpy_deal_size()')
         logger.debug(f'collateral(JPY): {collateral}')
-        logger.debug(f'board: {board}')
+        logger.debug(f'ticker: {ticker}')
         logger.debug(f'minimum: {minimum}')
 
         # 最小取引額を下回る場合は最小取引額になるように修正する
-        size = max(collateral / board, minimum)
+        size = max(collateral / ticker, minimum)
         logger.debug(f'size: {size}')
 
         return size
