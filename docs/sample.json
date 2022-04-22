@@ -6,6 +6,8 @@
         "type": "180",
         "span": 50,
         "minimum-trade-size": 0.01,
+        "strategy": "ma",
+        "available-strategy-list": ["ma", "ticker", "hamster"],
         "endpoint": {
             "url": "https://api.bitflyer.com",
             "check-ticker": "/v1/getticker?product_code=FX_BTC_JPY",

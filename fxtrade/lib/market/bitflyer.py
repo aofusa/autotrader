@@ -30,6 +30,8 @@ class BitFlyerMarket(BaseMarket):
         self.key = self.config.get('key')
         self.secret = self.config.get('secret')
 
+        self.strategy = self.config.get('strategy')
+
         self.url = self.config.get('endpoint').get('url')
         self.check_collateral_endpoint = self.config.get('endpoint').get('check-collateral')  # GET
         self.check_positions_endpoint = self.config.get('endpoint').get('check-positions')  # GET
@@ -135,7 +137,19 @@ class BitFlyerMarket(BaseMarket):
     def check_differential(self):
         # 現在の市場の動向を確認する
         logger.debug(f'{type(self).__name__}.check_differential()')
-        return self.check_moving_average()
+
+        if self.strategy == 'ma':
+            logger.debug('using strategy: moving average')
+            return self.check_moving_average()
+        elif self.strategy == 'ticker':
+            logger.debug('using strategy: ticker')
+            return self.check_ticker()
+        elif self.strategy == 'hamster':
+            logger.debug('using strategy: hamster')
+            return self.hamster()
+        else:
+            logger.warning(f'unknown strategy: {self.strategy}. using default strategy (moving average)')
+            return self.check_moving_average()
 
     def buy(self):
         # 購入取引を実施する
