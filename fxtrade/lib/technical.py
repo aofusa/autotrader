@@ -39,10 +39,12 @@ def check_flip_slope(slope):
     for index in range(len(slope)-1):
         if slope[index+1] > 0 and slope[index] < 0:
             # +に反転している
-            flip.append(1)
+            # +になっているので差分は正の値になる
+            flip.append(slope[index+1] - slope[index])
         elif slope[index+1] < 0 and slope[index] > 0:
             # -に反転している
-            flip.append(-1)
+            # -になっているので差分は負の値になる
+            flip.append(slope[index+1] - slope[index])
         else:
             # 反転は起きていない
             flip.append(0)

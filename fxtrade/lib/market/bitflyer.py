@@ -559,16 +559,13 @@ class BitFlyerMarket(BaseMarket):
 
         # 気配の有意な方に合わせる
         try:
-            logger.debug(f"total_bid_depth: {ticker.get('total_bid_depth')}")
-            logger.debug(f"total_ask_depth: {ticker.get('total_ask_depth')}")
-            if ticker.get('total_bid_depth') > ticker.get('total_ask_depth'):
-                # 買い気配の方が強いので購入する
-                logger.debug('bid begger than ask. return 1 (buy)')
-                return 1
-            else:
-                # 売り気配の方が強いので売却する
-                logger.debug('ask begger than bid. return -1 (sell)')
-                return -1
+            bid = ticker.get('total_bid_depth')
+            ask = ticker.get('total_ask_depth')
+            logger.debug(f'total_bid_depth: {bid}')
+            logger.debug(f'total_ask_depth: {ask}')
+            logger.debug(f'difference: {bid-ask}')
+            # 買い気配の方が売り気配よりも高ければ自動的に購入になる。逆なら売却になる
+            return bid - ask
         except Exception as e:
             # 予期しないエラーが発生したので何もしない
             logger.warning(e)
