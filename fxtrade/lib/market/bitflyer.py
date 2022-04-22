@@ -513,7 +513,7 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'positions: {positions}')
 
         # 建玉しているBTC額の計算
-        btc = sum([x.get('size') for x in positions if x.get('side') == 'BUY'])
+        btc = float(f"{sum([x.get('size') for x in positions if x.get('side') == 'BUY']):.7}")
         logger.debug(f'btc: {btc}')
 
         return btc
