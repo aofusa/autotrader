@@ -560,10 +560,10 @@ class BitFlyerMarket(BaseMarket):
             logger.warning(e)
             return 0
 
-    def hamstar(self):
+    def hamster(self):
         # ランダムに売買を決定する(-1, 0, 1を返す)
-        logger.debug(f'{type(self).__name__}.hamstar()')
+        logger.debug(f'{type(self).__name__}.hamster()')
         t = random.randint(-1,1)
-        logger.debug(f'hamstar: {t}')
+        logger.debug(f'hamster: {t}')
         return t
 
