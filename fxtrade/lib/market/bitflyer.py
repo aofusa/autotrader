@@ -2,6 +2,7 @@ import json
 import time
 import hmac
 import hashlib
+import random
 from urllib import request
 
 
@@ -134,68 +135,7 @@ class BitFlyerMarket(BaseMarket):
     def check_differential(self):
         # 現在の市場の動向を確認する
         logger.debug(f'{type(self).__name__}.check_differential()')
-
-        logger.debug('get market information')
-        logger.debug(f'call api: {self.chart_endpoint}')
-        try:
-            with request.urlopen(self.chart_endpoint) as response:
-                html = response.read()
-            data_raw = json.loads(html)
-        except Exception as e:
-            logger.warning(e)
-            return 0
-        logger.debug(f'get response: {html}')
-        # データ形式
-        # [
-        #     CloseTime,
-        #     OpenPrice,
-        #     HighPrice,
-        #     LowPrice,
-        #     ClosePrice,
-        #     Volume,
-        #     QuoteVolume
-        # ]
-
-        data = data_raw.get('result').get(self.cryptwatch_data_type)  # 3分足を取得
-        data_closeprice = [x[4] for x in data]  # 終値の取得
-        logger.debug(f'get close price list: {data_closeprice}')
-
-        span = self.span  # 50件(3*50=150分)の移動平均線
-        sma = calc_sma(data_closeprice, span)  # 単純移動平均線の作成
-        ema = calc_ema(data_closeprice, span)  # 指数平滑移動平均線の作成
-        logger.debug(f'span: {span}')
-        logger.debug(f'simple moving average: {sma}')
-        logger.debug(f'elastic moving average: {ema}')
-
-        # 傾きを計算する
-        slope_span = 1
-        sma_slope = calc_ma_slope(sma, slope_span)
-        ema_slope = calc_ma_slope(ema, slope_span)
-        logger.debug(f'sma slope: {sma_slope}')
-        logger.debug(f'ema slope: {ema_slope}')
-
-        # 前回の確認から今回の確認までの間に急激な変化があったかどうかを確認する。あれば売買を行うようにレスポンスする
-
-        # 傾きの反転をチェック
-        reverse = check_flip_slope(sma_slope)
-        logger.debug(f'reverse: {reverse}')
-
-        latest_reverse_list = [x for x in reverse if x != 0]  # 傾きが急激に発生したもののみに絞り込む。その中での最新の情報を取得する
-        logger.debug(f'latest_reverse_list: {latest_reverse_list}')
-
-        # 急激な傾きが一度も起きてなければ最新の傾きを返却する
-        if len(latest_reverse_list) == 0:
-            if len(reverse) > 0:
-                return reverse[-1]
-            else:
-                # 傾きの情報がなければ傾きはなかったとして返す
-                return 0
-
-        # 最新の傾きの情報のみをレスポンスする
-        latest_reverse = latest_reverse_list[-1]
-        logger.debug(f'latest_reverse: {latest_reverse}')
-
-        return latest_reverse
+        return self.check_moving_average()
 
     def buy(self):
         # 購入取引を実施する
@@ -517,4 +457,113 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'btc: {btc}')
 
         return btc
+
+    def check_moving_average(self):
+        # 移動平均線の変化を確認する
+        logger.debug(f'{type(self).__name__}.check_moving_average()')
+
+        logger.debug('get market information')
+        logger.debug(f'call api: {self.chart_endpoint}')
+        try:
+            with request.urlopen(self.chart_endpoint) as response:
+                html = response.read()
+            data_raw = json.loads(html)
+        except Exception as e:
+            logger.warning(e)
+            return 0
+        logger.debug(f'get response: {html}')
+        # データ形式
+        # [
+        #     CloseTime,
+        #     OpenPrice,
+        #     HighPrice,
+        #     LowPrice,
+        #     ClosePrice,
+        #     Volume,
+        #     QuoteVolume
+        # ]
+
+        data = data_raw.get('result').get(self.cryptwatch_data_type)  # 3分足を取得
+        data_closeprice = [x[4] for x in data]  # 終値の取得
+        logger.debug(f'get close price list: {data_closeprice}')
+
+        span = self.span  # 50件(3*50=150分)の移動平均線
+        sma = calc_sma(data_closeprice, span)  # 単純移動平均線の作成
+        ema = calc_ema(data_closeprice, span)  # 指数平滑移動平均線の作成
+        logger.debug(f'span: {span}')
+        logger.debug(f'simple moving average: {sma}')
+        logger.debug(f'elastic moving average: {ema}')
+
+        # 傾きを計算する
+        slope_span = 1
+        sma_slope = calc_ma_slope(sma, slope_span)
+        ema_slope = calc_ma_slope(ema, slope_span)
+        logger.debug(f'sma slope: {sma_slope}')
+        logger.debug(f'ema slope: {ema_slope}')
+
+        # 前回の確認から今回の確認までの間に急激な変化があったかどうかを確認する。あれば売買を行うようにレスポンスする
+
+        # 傾きの反転をチェック
+        reverse = check_flip_slope(sma_slope)
+        logger.debug(f'reverse: {reverse}')
+
+        latest_reverse_list = [x for x in reverse if x != 0]  # 傾きが急激に発生したもののみに絞り込む。その中での最新の情報を取得する
+        logger.debug(f'latest_reverse_list: {latest_reverse_list}')
+
+        # 急激な傾きが一度も起きてなければ最新の傾きを返却する
+        if len(latest_reverse_list) == 0:
+            if len(reverse) > 0:
+                return reverse[-1]
+            else:
+                # 傾きの情報がなければ傾きはなかったとして返す
+                return 0
+
+        # 最新の傾きの情報のみをレスポンスする
+        latest_reverse = latest_reverse_list[-1]
+        logger.debug(f'latest_reverse: {latest_reverse}')
+
+        return latest_reverse
+
+    def check_ticker(self):
+        # 売りと買いの気配を調べる
+        logger.debug(f'{type(self).__name__}.check_ticker()')
+
+        url = self.url
+        path = self.check_ticker_endpoint
+
+        logger.debug(f'call api: {url+path}')
+        try:
+            req = request.Request(url+path)
+            with request.urlopen(req) as response:
+                the_page = response.read()
+            ticker_raw = json.loads(the_page)
+            ticker = ticker_raw
+        except Exception as e:
+            logger.warning(e)
+            return 0
+        logger.debug(f'ticker: {ticker}')
+
+        # 気配の有意な方に合わせる
+        try:
+            logger.debug(f"total_bid_depth: {ticker.get('total_bid_depth')}")
+            logger.debug(f"total_ask_depth: {ticker.get('total_ask_depth')}")
+            if ticker.get('total_bid_depth') > ticker.get('total_ask_depth'):
+                # 買い気配の方が強いので購入する
+                logger.debug('bid begger than ask. return 1 (buy)')
+                return 1
+            else:
+                # 売り気配の方が強いので売却する
+                logger.debug('ask begger than bid. return -1 (sell)')
+                return -1
+        except Exception as e:
+            # 予期しないエラーが発生したので何もしない
+            logger.warning(e)
+            return 0
+
+    def hamstar(self):
+        # ランダムに売買を決定する(-1, 0, 1を返す)
+        logger.debug(f'{type(self).__name__}.hamstar()')
+        t = random.randint(-1,1)
+        logger.debug(f'hamstar: {t}')
+        return t
 
