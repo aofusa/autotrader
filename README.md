@@ -1,9 +1,8 @@
-FX Trade
+Auto Trader
 =====
 
-FX Trade
 
-BitFlyer API を利用して自動トレードを行う
+API を利用して自動トレードを行う
 
 
 基本戦略
