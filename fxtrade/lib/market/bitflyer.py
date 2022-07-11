@@ -138,9 +138,12 @@ class BitFlyerMarket(BaseMarket):
         # 現在の市場の動向を確認する
         logger.debug(f'{type(self).__name__}.check_differential()')
 
-        if self.strategy == 'ma':
-            logger.debug('using strategy: moving average')
-            return self.check_moving_average()
+        if self.strategy == 'sma':
+            logger.debug('using strategy: simple moving average')
+            return self.check_simple_moving_average()
+        elif self.strategy == 'ema':
+            logger.debug('using strategy: exponentially smoothed moving average')
+            return self.check_exponentially_smoothed_moving_average()
         elif self.strategy == 'ticker':
             logger.debug('using strategy: ticker')
             return self.check_ticker()
@@ -472,9 +475,9 @@ class BitFlyerMarket(BaseMarket):
 
         return btc
 
-    def check_moving_average(self):
+    def check_simple_moving_average(self):
         # 移動平均線の変化を確認する
-        logger.debug(f'{type(self).__name__}.check_moving_average()')
+        logger.debug(f'{type(self).__name__}.check_simple_moving_average()')
 
         logger.debug('get market information')
         logger.debug(f'call api: {self.chart_endpoint}')
@@ -519,6 +522,72 @@ class BitFlyerMarket(BaseMarket):
 
         # 傾きの反転をチェック
         reverse = check_flip_slope(sma_slope)
+        logger.debug(f'reverse: {reverse}')
+
+        latest_reverse_list = [x for x in reverse if x != 0]  # 傾きが急激に発生したもののみに絞り込む。その中での最新の情報を取得する
+        logger.debug(f'latest_reverse_list: {latest_reverse_list}')
+
+        # 急激な傾きが一度も起きてなければ最新の傾きを返却する
+        if len(latest_reverse_list) == 0:
+            if len(reverse) > 0:
+                return reverse[-1]
+            else:
+                # 傾きの情報がなければ傾きはなかったとして返す
+                return 0
+
+        # 最新の傾きの情報のみをレスポンスする
+        latest_reverse = latest_reverse_list[-1]
+        logger.debug(f'latest_reverse: {latest_reverse}')
+
+        return latest_reverse
+
+    def check_exponentially_smoothed_moving_average(self):
+        # 移動平均線の変化を確認する
+        logger.debug(f'{type(self).__name__}.check_exponentially_smoothed_moving_average()')
+
+        logger.debug('get market information')
+        logger.debug(f'call api: {self.chart_endpoint}')
+        try:
+            with request.urlopen(self.chart_endpoint) as response:
+                html = response.read()
+            data_raw = json.loads(html)
+        except Exception as e:
+            logger.warning(e)
+            return 0
+        logger.debug(f'get response: {html}')
+        # データ形式
+        # [
+        #     CloseTime,
+        #     OpenPrice,
+        #     HighPrice,
+        #     LowPrice,
+        #     ClosePrice,
+        #     Volume,
+        #     QuoteVolume
+        # ]
+
+        data = data_raw.get('result').get(self.cryptwatch_data_type)  # 3分足を取得
+        data_closeprice = [x[4] for x in data]  # 終値の取得
+        logger.debug(f'get close price list: {data_closeprice}')
+
+        span = self.span  # 50件(3*50=150分)の移動平均線
+        sma = calc_sma(data_closeprice, span)  # 単純移動平均線の作成
+        ema = calc_ema(data_closeprice, span)  # 指数平滑移動平均線の作成
+        logger.debug(f'span: {span}')
+        logger.debug(f'simple moving average: {sma}')
+        logger.debug(f'elastic moving average: {ema}')
+
+        # 傾きを計算する
+        slope_span = 1
+        sma_slope = calc_ma_slope(sma, slope_span)
+        ema_slope = calc_ma_slope(ema, slope_span)
+        logger.debug(f'sma slope: {sma_slope}')
+        logger.debug(f'ema slope: {ema_slope}')
+
+        # 前回の確認から今回の確認までの間に急激な変化があったかどうかを確認する。あれば売買を行うようにレスポンスする
+
+        # 傾きの反転をチェック
+        reverse = check_flip_slope(ema_slope)
         logger.debug(f'reverse: {reverse}')
 
         latest_reverse_list = [x for x in reverse if x != 0]  # 傾きが急激に発生したもののみに絞り込む。その中での最新の情報を取得する
