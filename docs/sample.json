@@ -6,6 +6,8 @@
         "type": "180",
         "span": 50,
         "minimum-trade-size": 0.01,
+        "trade-rate": "max",
+        "available-trade-rate": [ "max", "min" ],
         "strategy": "sma",
         "available-strategy-list": ["sma", "ema", "ticker", "hamster"],
         "endpoint": {

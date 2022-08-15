@@ -30,6 +30,7 @@ class BitFlyerMarket(BaseMarket):
         self.key = self.config.get('key')
         self.secret = self.config.get('secret')
 
+        self.trade_rate = self.config.get('trade-rate')
         self.strategy = self.config.get('strategy')
 
         self.url = self.config.get('endpoint').get('url')
@@ -72,7 +73,7 @@ class BitFlyerMarket(BaseMarket):
         logger.debug(f'call api: {url+path}')
         logger.debug(f'headers: {headers}')
         req = request.Request(url+path, b'', headers, method=method)
-        
+
         try:
             with request.urlopen(req) as response:
                 trade_results_raw = response.read()
@@ -430,6 +431,10 @@ class BitFlyerMarket(BaseMarket):
 
         # 最小取引額を下回る場合は最小取引額になるように修正する
         size = float(f'{max(collateral / ticker, minimum):.7}')
+        if (self.trade_rate == "min"):
+            # 最少額で取引するように設定されていたら取引額を最少額で上書きする
+            size = minimum
+            logger.debug(f'trade rate is choose minimum. set minimum size: {size}')
         logger.debug(f'size: {size}')
 
         return size
