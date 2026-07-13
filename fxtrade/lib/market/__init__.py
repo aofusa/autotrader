@@ -1,2 +1,2 @@
-from .mock import MockStockMarket
-from .bitflyer import BitFlyerMarket
+from .mock import PaperExchange
+from .bitflyer import BitFlyerExchange
