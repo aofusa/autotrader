@@ -3,23 +3,38 @@
         "label": "{{ your_key_label }}",
         "key": "{{ your_key }}",
         "secret": "{{ your_secret }}",
-        "type": "180",
-        "span": 50,
-        "minimum-trade-size": 0.01,
-        "trade-rate": "max",
-        "available-trade-rate": [ "max", "min" ],
-        "strategy": "sma",
-        "available-strategy-list": ["sma", "ema", "ticker", "hamster"],
+        "candle-interval": "4h",
         "endpoint": {
-            "url": "https://api.bitflyer.com",
-            "check-ticker": "/v1/getticker?product_code=FX_BTC_JPY",
-            "check-collateral": "/v1/me/getcollateralaccounts",
-            "check-positions": "/v1/me/getpositions?product_code=FX_BTC_JPY",
-            "check-trade": "/v1/me/getchildorders?product_code=FX_BTC_JPY",
-            "buy": "/v1/me/sendchildorder",
-            "sell": "/v1/me/sendchildorder",
-            "cancel": "/v1/me/cancelchildorder",
-            "chart": "https://api.cryptowat.ch/markets/bitflyer/btcjpy/ohlc"
+            "url": "https://api.bitflyer.com"
+        }
+    },
+    "trading": {
+        "products": "btc",
+        "available-products": ["btc", "eth", "both"],
+        "strategy": {
+            "fast-span": 20,
+            "slow-span": 100,
+            "donchian-span": 80,
+            "atr-span": 14,
+            "trail-atr-mult": 4.0,
+            "allow-short": true
+        },
+        "risk": {
+            "max-leverage": 2.0,
+            "risk-per-trade": 0.02,
+            "margin-usage-limit": 0.7,
+            "drawdown-soft": 0.10,
+            "drawdown-hard": 0.35,
+            "drawdown-min-scale": 0.25
+        },
+        "rebalance-threshold": 0.3,
+        "paper": {
+            "initial-jpy": 500000,
+            "candle-interval": "4h",
+            "slippage": 0.0005,
+            "swap-rate-daily": 0.0004,
+            "spot-fee-rate": 0.0015,
+            "state-path": "docs/artifacts/paper_state.json"
         }
     }
 }
