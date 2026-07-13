@@ -72,8 +72,8 @@ class RiskManager:
 
         size = size_by_risk * strength_scale * dd_scale
 
-        # 4. レバレッジ上限（現物はレバレッジ1倍まで）
-        leverage_cap = 1.0 if spot else self.max_leverage
+        # 4. レバレッジ上限（現物はレバレッジ1倍まで。手数料分のバッファを残す）
+        leverage_cap = 0.98 if spot else self.max_leverage
         # 証拠金取引では証拠金使用率の上限も掛ける（維持率に余裕を残す）
         if not spot:
             leverage_cap = min(leverage_cap, self.max_leverage * self.margin_usage_limit)
