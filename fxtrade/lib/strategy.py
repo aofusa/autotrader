@@ -46,11 +46,13 @@ class TrendStrategy:
 
     def __init__(self, config=None):
         config = config or {}
+        # デフォルト値はBTC/ETHの2017〜2026年のバックテストで選定した
+        # 頑健なパラメータ（4時間足を想定）
         self.fast_span = int(config.get('fast-span', 20))
-        self.slow_span = int(config.get('slow-span', 60))
+        self.slow_span = int(config.get('slow-span', 300))
         self.atr_span = int(config.get('atr-span', 14))
-        self.donchian_span = int(config.get('donchian-span', 40))
-        self.trail_atr_mult = float(config.get('trail-atr-mult', 3.0))
+        self.donchian_span = int(config.get('donchian-span', 200))
+        self.trail_atr_mult = float(config.get('trail-atr-mult', 2.5))
         self.allow_short = bool(config.get('allow-short', True))
         logger.debug(f'TrendStrategy params: fast={self.fast_span} slow={self.slow_span} '
                      f'atr={self.atr_span} donchian={self.donchian_span} '

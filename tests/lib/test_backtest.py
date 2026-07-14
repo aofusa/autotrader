@@ -104,10 +104,13 @@ class TestSimulatedExchange(unittest.TestCase):
 
 class TestBacktest(unittest.TestCase):
 
+    # テストは短い期間設定で行う（デフォルトは長期間の足が必要なため）
+    CONFIG = {'strategy': {'fast-span': 10, 'slow-span': 30, 'donchian-span': 20}}
+
     def test_grows_on_trending_market(self):
         # トレンドの明確な合成相場では資産が増える
         candles = make_candles(trending_market())
-        result = run_backtest(PRODUCT_BTC_FX, candles, 500000)
+        result = run_backtest(PRODUCT_BTC_FX, candles, 500000, config=self.CONFIG)
         self.assertGreater(result.final_equity, result.initial_equity)
         self.assertEqual(result.margin_call_count, 0)
 
@@ -117,7 +120,7 @@ class TestBacktest(unittest.TestCase):
         for _ in range(300):
             closes.append(closes[-1] * 0.95)
         candles = make_candles(closes)
-        result = run_backtest(PRODUCT_BTC_FX, candles, 500000)
+        result = run_backtest(PRODUCT_BTC_FX, candles, 500000, config=self.CONFIG)
         self.assertEqual(result.margin_call_count, 0)
         # 資産がゼロやマイナスにならない
         self.assertGreater(result.final_equity, 0)
@@ -130,7 +133,7 @@ class TestBacktest(unittest.TestCase):
             move = random.choice([0.90, 0.95, 1.0, 1.05, 1.10])
             closes.append(closes[-1] * move)
         candles = make_candles(closes)
-        result = run_backtest(PRODUCT_BTC_FX, candles, 500000)
+        result = run_backtest(PRODUCT_BTC_FX, candles, 500000, config=self.CONFIG)
         self.assertGreater(result.final_equity, 0)
         self.assertEqual(result.margin_call_count, 0)
 
@@ -140,7 +143,7 @@ class TestBacktest(unittest.TestCase):
         for _ in range(300):
             closes.append(closes[-1] * 0.97)
         candles = make_candles(closes)
-        result = run_backtest(PRODUCT_ETH_SPOT, candles, 500000)
+        result = run_backtest(PRODUCT_ETH_SPOT, candles, 500000, config=self.CONFIG)
         self.assertGreaterEqual(result.final_equity, 0)
 
 

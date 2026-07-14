@@ -24,7 +24,7 @@ class RiskManager:
         self.max_leverage = min(float(config.get('max-leverage', 2.0)), HARD_MAX_LEVERAGE)
         if float(config.get('max-leverage', 2.0)) > HARD_MAX_LEVERAGE:
             logger.warning(f'max-leverage exceeds hard limit. clamped to {HARD_MAX_LEVERAGE}')
-        self.risk_per_trade = float(config.get('risk-per-trade', 0.02))
+        self.risk_per_trade = float(config.get('risk-per-trade', 0.04))
         self.margin_usage_limit = float(config.get('margin-usage-limit', 0.7))
         self.drawdown_soft = float(config.get('drawdown-soft', 0.10))
         self.drawdown_hard = float(config.get('drawdown-hard', 0.35))

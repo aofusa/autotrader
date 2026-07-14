@@ -178,6 +178,12 @@ def run_backtest(spec: ProductSpec, candles, initial_jpy, config=None,
     engine = TradingEngine(sim, spec, config=config)
 
     warmup = engine.strategy.min_history()
+    if warmup >= len(candles):
+        # データ不足の場合は取引なし（資産は初期値のまま）として返す
+        logger.warning(f'not enough candles for backtest: {len(candles)} < {warmup}')
+        return BacktestResult(initial_equity=initial_jpy, final_equity=initial_jpy,
+                              max_drawdown=0.0, trade_count=0, fees_paid=0.0,
+                              swap_paid=0.0, margin_call_count=0, years=0.0)
     equity_curve = []
     peak = initial_jpy
     max_dd = 0.0

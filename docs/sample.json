@@ -13,15 +13,15 @@
         "available-products": ["btc", "eth", "both"],
         "strategy": {
             "fast-span": 20,
-            "slow-span": 100,
-            "donchian-span": 80,
+            "slow-span": 300,
+            "donchian-span": 200,
             "atr-span": 14,
-            "trail-atr-mult": 4.0,
+            "trail-atr-mult": 2.5,
             "allow-short": true
         },
         "risk": {
             "max-leverage": 2.0,
-            "risk-per-trade": 0.02,
+            "risk-per-trade": 0.04,
             "margin-usage-limit": 0.7,
             "drawdown-soft": 0.10,
             "drawdown-hard": 0.35,

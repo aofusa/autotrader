@@ -65,34 +65,37 @@ class TestProductsFromConfig(unittest.TestCase):
 
 class TestTradingEngine(unittest.TestCase):
 
+    # テストは短い期間設定で行う（デフォルトは長期間の足が必要なため）
+    CONFIG = {'strategy': {'fast-span': 10, 'slow-span': 30, 'donchian-span': 20}}
+
     def uptrend_candles(self):
         return make_candles([100000.0 + i * 1000 for i in range(300)])
 
     def test_enters_long_on_uptrend(self):
         # 上昇トレンドでノーポジションなら買い注文が出る
         exchange = FakeExchange(self.uptrend_candles())
-        engine = TradingEngine(exchange, PRODUCT_BTC_FX)
+        engine = TradingEngine(exchange, PRODUCT_BTC_FX, config=self.CONFIG)
         traded, signal = engine.step()
         self.assertTrue(traded)
         self.assertEqual(exchange.orders[0][0], 'BUY')
 
     def test_no_trade_without_data(self):
         exchange = FakeExchange([])
-        engine = TradingEngine(exchange, PRODUCT_BTC_FX)
+        engine = TradingEngine(exchange, PRODUCT_BTC_FX, config=self.CONFIG)
         traded, signal = engine.step()
         self.assertFalse(traded)
         self.assertEqual(exchange.orders, [])
 
     def test_no_trade_without_equity(self):
         exchange = FakeExchange(self.uptrend_candles(), equity=0)
-        engine = TradingEngine(exchange, PRODUCT_BTC_FX)
+        engine = TradingEngine(exchange, PRODUCT_BTC_FX, config=self.CONFIG)
         traded, signal = engine.step()
         self.assertFalse(traded)
 
     def test_no_rebalance_for_small_delta(self):
         # 目標と現在の差が小さいときは発注しない（コスト節約）
         exchange = FakeExchange(self.uptrend_candles())
-        engine = TradingEngine(exchange, PRODUCT_BTC_FX)
+        engine = TradingEngine(exchange, PRODUCT_BTC_FX, config=self.CONFIG)
         # 一度発注させて目標サイズを得る
         engine.step()
         target = exchange.orders[0][1]
@@ -105,7 +108,7 @@ class TestTradingEngine(unittest.TestCase):
     def test_adopts_external_position(self):
         # 再起動などで内部状態がなくても実ポジションに追従する
         exchange = FakeExchange(self.uptrend_candles(), position=0.5)
-        engine = TradingEngine(exchange, PRODUCT_BTC_FX)
+        engine = TradingEngine(exchange, PRODUCT_BTC_FX, config=self.CONFIG)
         engine.step()
         self.assertEqual(engine.position_state.direction, 1)
 
@@ -114,7 +117,7 @@ class TestTradingEngine(unittest.TestCase):
         downtrend = make_candles([300000.0 - i * 500 for i in range(300)])
         exchange = FakeExchange(downtrend)
         engine = TradingEngine(exchange, PRODUCT_ETH_SPOT,
-                               config={'strategy': {'allow-short': False}})
+                               config=self.CONFIG)
         traded, signal = engine.step()
         self.assertFalse(traded)
         self.assertEqual(exchange.orders, [])
