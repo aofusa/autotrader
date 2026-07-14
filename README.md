@@ -47,6 +47,7 @@ python3 fxtrade/backtest_runner.py --product eth --interval 1d --initial 500000
 | `risk.risk-per-trade` | 1回の取引で許容する損失（資産比。デフォルト2%） |
 | `strategy.trail-atr-mult` | トレーリングストップの幅（ATRの倍数） |
 | `bitflyer.candle-interval` | シグナル計算に使う足の間隔（例: `4h`） |
+| `bitflyer.spot-reserves` | 運用対象外にする現物残高（例: `{"ETH": 0.6875}`。この数量には一切手を触れない） |
 
 API
 -----

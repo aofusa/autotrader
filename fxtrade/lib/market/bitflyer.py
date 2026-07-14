@@ -31,6 +31,9 @@ class BitFlyerExchange(ExchangeAdapter):
         self.secret = self.config.get('secret')
         self.url = (self.config.get('endpoint') or {}).get('url', 'https://api.bitflyer.com')
         self.candle_interval = self.config.get('candle-interval', '1h')
+        # 予約残高: ここで指定した数量はボットの運用対象外として一切売買しない
+        # 例: {"ETH": 0.6875} → 既存保有の0.6875 ETHには手を触れない
+        self.spot_reserves = self.config.get('spot-reserves') or {}
         self._price_cache = {}
         logger.debug(f'BitFlyerExchange initialized. key={anonymization(self.key)} '
                      f'dryrun={self.is_dryrun}')
@@ -99,7 +102,7 @@ class BitFlyerExchange(ExchangeAdapter):
     def get_equity(self, spec):
         try:
             if spec.spot:
-                # 現物: 日本円残高 + 保有数量の評価額
+                # 現物: 日本円残高 + 運用対象の保有数量（予約残高を除く）の評価額
                 balances = self._private_request('GET', '/v1/me/getbalance')
                 jpy = 0.0
                 coin = 0.0
@@ -109,10 +112,13 @@ class BitFlyerExchange(ExchangeAdapter):
                         jpy = float(b.get('amount', 0))
                     elif b.get('currency_code') == currency:
                         coin = float(b.get('amount', 0))
+                reserve = float(self.spot_reserves.get(currency, 0))
+                tradable = max(coin - reserve, 0.0)
                 price = self.get_price(spec)
-                equity = jpy + coin * price
+                equity = jpy + tradable * price
                 logger.info(f'equity [{spec.name}]: {equity:,.0f} JPY '
-                            f'(JPY={jpy:,.0f}, {currency}={coin})')
+                            f'(JPY={jpy:,.0f}, {currency}={coin}, '
+                            f'reserved={reserve}, tradable={tradable})')
                 return equity
             else:
                 # FX: 証拠金 + 評価損益
@@ -135,7 +141,9 @@ class BitFlyerExchange(ExchangeAdapter):
                 currency = spec.code.split('_')[0]
                 for b in balances:
                     if b.get('currency_code') == currency:
-                        return float(b.get('amount', 0))
+                        # 予約残高はボットのポジションとして扱わない（売買対象外）
+                        reserve = float(self.spot_reserves.get(currency, 0))
+                        return max(float(b.get('amount', 0)) - reserve, 0.0)
                 return 0.0
             else:
                 positions = self._private_request(
@@ -154,6 +162,15 @@ class BitFlyerExchange(ExchangeAdapter):
     # --- 発注 ---
 
     def market_order(self, spec, side, size):
+        if spec.spot and side == 'SELL':
+            # 安全装置: 現物の売却は運用対象数量（予約残高を除く）を超えない
+            tradable = self.get_position(spec)
+            if size > tradable:
+                logger.warning(f'[{spec.name}] sell size {size} exceeds tradable {tradable}. clamped')
+                size = tradable
+            if size < spec.min_size:
+                logger.warning(f'[{spec.name}] sell size below minimum. order skipped')
+                return -1
         size = float(f'{size:.8f}')
         body = {
             'product_code': spec.code,

@@ -4,6 +4,9 @@
         "key": "{{ your_key }}",
         "secret": "{{ your_secret }}",
         "candle-interval": "4h",
+        "spot-reserves": {
+            "ETH": 0.0
+        },
         "endpoint": {
             "url": "https://api.bitflyer.com"
         }
